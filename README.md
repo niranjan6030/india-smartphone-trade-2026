@@ -8,8 +8,6 @@ US smartphone imports and India's smartphone exports from January 2022 to July 2
 
 **[Open the interactive dashboard](https://niranjan6030.github.io/india-smartphone-trade-2026/)**
 
-![US smartphone imports by year](images/01_us_imports_by_year.png)
-
 ## Questions
 
 1. How big is the US smartphone import market and who supplies it?
@@ -56,7 +54,6 @@ dashboard/
   template.html            dashboard page (layout, charts, filters)
   build_dashboard.py       puts the cleaned data into the page
 docs/index.html            the finished dashboard (served by GitHub Pages)
-images/                    charts used in this README
 ```
 
 ## Interactive dashboard
@@ -86,14 +83,15 @@ The raw data had more problems than I expected. Full details are in
 
 ## Key findings
 
+The charts for each finding are in [`03_analysis.ipynb`](notebooks/03_analysis.ipynb) and on the
+[dashboard](https://niranjan6030.github.io/india-smartphone-trade-2026/).
+
 ### 1. India grew 35x while the market shrank
 
 For January to July, US smartphone imports fell from **$36.7B (2022) to $28.4B (2026)**. In the same period, phones from
 India went from **$0.47B to $16.45B**, and China fell from $27.1B to $8.5B.
 
 ### 2. India overtook China in April 2025, the month of the new US tariffs
-
-![Monthly share](images/02_monthly_share.png)
 
 India was under 5% of US smartphone imports for most of 2022. It passed China for the first time in **April 2025** (58% vs
 27%), the month the US announced its new tariffs with China hit hardest. Since then India has been ahead in 13 of 16
@@ -102,8 +100,6 @@ tariffs are not the only reason.
 
 ### 3. India's share drops every September
 
-![September dip](images/03_september_dip.png)
-
 Every year India's share falls around September/October and recovers by December. The low points were 4% (Oct 2023),
 5% (Sep 2024) and 16% (Sep 2025). New iPhones launch every September, so my guess is that the first batches of new
 models still come mostly from China. The low point is rising every year, so India seems to be making more of the
@@ -111,21 +107,15 @@ launch-season phones each year.
 
 ### 4. India ships the most expensive phones
 
-![Price per phone](images/04_price_per_phone.png)
-
 Phones from India average **$533** in 2026, compared with $357 from China and $242 from Vietnam. That fits with news
 reports that most of India's smartphone exports to the US are iPhones (Vietnam mostly makes Samsung phones).
 
 ### 5. 70% of India's smartphone exports now go to one country
 
-![India destinations](images/05_india_destinations.png)
-
 India's smartphone exports grew from $14.3B (2023) to **$30.1B (2025)**. The US share went from 14% in 2022 to **70%**
 in 2026. That's a big success, but also a risk: most of this industry now depends on US trade policy.
 
 ### 6. The two countries' numbers don't always match
-
-![Mirror check](images/06_mirror_check.png)
 
 The same phones are counted twice: by India when they leave and by the US when they arrive. Until October 2025 the two
 numbers were within about 3% (normal, because the US value includes shipping and insurance). But from **November 2025
