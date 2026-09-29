@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Made in India, sold in America: who supplies US smartphones, 2022 to 2026. UN Comtrade data cleaned and visualised.">
+<title>Made in India, Sold in America</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#F4F3EF; --card:#FFFFFF; --line:#E4E2DC; --line-2:#EEECE7;
+    --ink:#16161A; --ink-2:#4A4A55; --muted:#7A7A85;
+    --navy:#14213D; --navy-2:#223257; --on-navy:#FFFFFF; --on-navy-2:#B9C2D8;
+    --china:#4a3aa7; --india:#c77700; --vietnam:#1a9a6c; --others:#A3A2AB;
+    --focus:#3F3F46; --stem:#D6D4CD; --rest:#DCDAD3;
+    --gap-up:#2a78d6; --gap-down:#e34948;
+    --font:'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:14px; line-height:1.5}
+
+  /* masthead */
+  .masthead{background:var(--navy); color:var(--on-navy); padding:28px 16px 24px}
+  .mast-inner{max-width:1400px; margin:0 auto; display:flex; flex-direction:column; gap:20px}
+  .eyebrow{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--on-navy-2); margin:0}
+  h1{font-size:clamp(26px,3.4vw,40px); line-height:1.1; margin:6px 0 6px; font-weight:700; letter-spacing:-.02em}
+  .lede{margin:0; color:var(--on-navy-2); font-size:15px; max-width:70ch}
+  .lede b{color:var(--on-navy); font-weight:600}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); border-top:1px solid var(--navy-2)}
+  .stat{padding:14px 18px 2px 0; border-right:1px solid var(--navy-2); margin-right:18px}
+  .stat:last-child{border-right:0}
+  .stat .v{font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.15}
+  .stat .l{font-size:12px; color:var(--on-navy-2)}
+  .stat .v small{font-size:14px; font-weight:500; color:var(--on-navy-2)}
+
+  /* layout */
+  .layout{max-width:1400px; margin:0 auto; padding:20px 16px 40px; display:grid; grid-template-columns:250px minmax(0,1fr); gap:20px; align-items:start}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+  /* sidebar */
+  .side{position:sticky; top:16px; display:flex; flex-direction:column; gap:16px}
+  @media (max-width:900px){ .side{position:static} }
+  .box{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px}
+  .box h3{margin:0 0 10px; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  .ctl + .ctl{margin-top:16px}
+  .ctl-label{font-size:12.5px; font-weight:600; margin-bottom:6px; display:block}
+  .years{display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:6px}
+  .yr{font:500 13px var(--font); border:1px solid var(--line); background:var(--card); color:var(--ink-2); border-radius:4px; padding:6px 0; cursor:pointer}
+  .yr[aria-pressed="true"]{background:var(--navy); color:var(--on-navy); border-color:var(--navy)}
+  .seg{display:flex; border:1px solid var(--line); border-radius:4px; overflow:hidden}
+  .seg button{flex:1; font:500 12.5px var(--font); background:var(--card); color:var(--ink-2); border:0; padding:7px 6px; cursor:pointer}
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--navy); color:var(--on-navy)}
+  .yr:focus-visible,.seg button:focus-visible,.reset:focus-visible,.hl button:focus-visible{outline:2px solid var(--gap-up); outline-offset:2px}
+  .hl{display:flex; flex-direction:column; gap:6px}
+  .hl .none{font-size:12.5px; color:var(--muted)}
+  .hl .tag{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px; background:var(--line-2); border-radius:4px; padding:4px 4px 4px 9px}
+  .hl button{all:unset; cursor:pointer; font-size:12px; padding:2px 7px; border-radius:3px; color:var(--ink-2)}
+  .hl button:hover{background:var(--line)}
+  .reset{margin-top:16px; width:100%; font:500 12.5px var(--font); background:transparent; border:1px solid var(--line); border-radius:4px; padding:7px; cursor:pointer; color:var(--ink-2)}
+  .reset:hover{border-color:var(--ink-2)}
+  .warn{margin-top:12px; font-size:12px; color:#8A4F00; background:#FFF4DF; border-radius:4px; padding:8px 10px}
+  .takeaways ol{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:10px; font-size:13px; color:var(--ink-2)}
+  .takeaways b{color:var(--ink)}
+
+  /* main */
+  main{display:flex; flex-direction:column; gap:28px; min-width:0}
+  .sec-title{display:flex; align-items:baseline; gap:12px; margin:0 0 12px; font-size:19px; font-weight:700; letter-spacing:-.01em}
+  .sec-title span{font-size:13px; font-weight:600; color:var(--india); letter-spacing:.05em}
+  .row{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .row.split{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+  @media (max-width:1100px){ .row.split{grid-template-columns:1fr} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px 18px 12px; min-width:0; display:flex; flex-direction:column}
+  .card h4{margin:0; font-size:15px; font-weight:600}
+  .card p.sub{margin:2px 0 10px; font-size:12.5px; color:var(--muted)}
+  .chart{width:100%; height:280px}
+  .chart.tall{height:340px}
+
+  .checks{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+  .check{border-top:3px solid var(--navy); padding-top:10px}
+  .check .v{font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.15}
+  .check .v small{font-size:14px; font-weight:500; color:var(--muted)}
+  .check .l{font-size:12.5px; color:var(--ink-2)}
+
+  details{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px 18px}
+  summary{cursor:pointer; font-weight:600; font-size:14px}
+  summary:focus-visible{outline:2px solid var(--gap-up); outline-offset:3px}
+  .tablebox{overflow-x:auto; margin-top:10px}
+  table{border-collapse:collapse; width:100%; font-size:13px; min-width:520px; font-variant-numeric:tabular-nums}
+  th,td{text-align:right; padding:7px 10px; border-bottom:1px solid var(--line-2); white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:11.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.06em}
+  tr.focus td{background:#FFF4DF}
+  .sw{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px}
+  footer{font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px}
+  footer a{color:var(--navy); font-weight:600}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important; transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="mast-inner">
+    <div>
+      <p class="eyebrow">UN Comtrade &middot; HS 851713 smartphones &middot; <span id="period"></span></p>
+      <h1>Made in India, Sold in America</h1>
+      <p class="lede">Who supplies the smartphones the US buys, and how fast India is taking China's place.
+        Built from <b id="rawFiles"></b> raw monthly trade files, cleaned in Python.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <div class="box">
+      <h3>Filters</h3>
+      <div class="ctl">
+        <span class="ctl-label">Years</span>
+        <div class="years" id="years"></div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label">Months</span>
+        <div class="seg" id="segWindow">
+          <button type="button" data-v="all" aria-pressed="true">All</button>
+          <button type="button" data-v="janjul" aria-pressed="false">Jan&ndash;Jul only</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label">Measure</span>
+        <div class="seg" id="segMeasure">
+          <button type="button" data-v="value" aria-pressed="true">Value (US$)</button>
+          <button type="button" data-v="qty" aria-pressed="false">Phones</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label">Highlighted</span>
+        <div class="hl" id="highlights"></div>
+      </div>
+      <div id="warn"></div>
+      <button type="button" class="reset" id="reset">Reset everything</button>
+    </div>
+
+    <div class="box takeaways">
+      <h3>Key takeaways</h3>
+      <ol id="takeaways"></ol>
+    </div>
+  </aside>
+
+  <main>
+    <section>
+      <h2 class="sec-title"><span>01</span>The shift</h2>
+      <div class="row split">
+        <div class="card">
+          <h4>Share of US smartphone imports, every month</h4>
+          <p class="sub" id="shareSub"></p>
+          <div class="chart tall" id="cShare" role="img" aria-label="Stacked area chart of each country's monthly share of US smartphone imports"></div>
+        </div>
+        <div class="card">
+          <h4>January to July, year by year</h4>
+          <p class="sub">The same seven months each year, so 2026 compares fairly</p>
+          <div class="chart tall" id="cYearly" role="img" aria-label="Line chart of imports from each country, January to July of each year"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-title"><span>02</span>Who ships what</h2>
+      <div class="row">
+        <div class="card">
+          <h4>Suppliers to the US</h4>
+          <p class="sub">Tile size = share of imports. Click a tile to highlight that country</p>
+          <div class="chart" id="cTree" role="img" aria-label="Treemap of countries supplying smartphones to the US"></div>
+        </div>
+        <div class="card">
+          <h4>Average price per phone</h4>
+          <p class="sub">Shipments of 1,000+ phones. 2022 left out: those counts are UN estimates</p>
+          <div class="chart" id="cPrice" role="img" aria-label="Dot plot of average price per phone by country and year"></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <div class="card">
+          <h4>India's share by month: the September dip</h4>
+          <p class="sub" id="heatSub">Darker = bigger share. September is labelled: that's when new iPhones launch, and India's share drops every year</p>
+          <div class="chart" id="cHeat" role="img" aria-label="Heatmap of India's share of US smartphone imports by month and year"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-title"><span>03</span>India's side of the trade</h2>
+      <div class="row">
+        <div class="card">
+          <h4>Where India's smartphones go</h4>
+          <p class="sub">India's own export data. Click a country to compare it on the right</p>
+          <div class="chart tall" id="cDest" role="img" aria-label="Lollipop chart of the top destinations of India's smartphone exports"></div>
+        </div>
+        <div class="card">
+          <h4>How much goes to the US</h4>
+          <p class="sub" id="usShareSub">Share of India's smartphone exports each year (2022 starts in April)</p>
+          <div class="chart tall" id="cUsShare" role="img" aria-label="Stacked columns of the share of India's smartphone exports going to the US each year"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-title"><span>04</span>Checking the data</h2>
+      <div class="row split">
+        <div class="card">
+          <h4>Same phones, two different numbers</h4>
+          <p class="sub">Each month: what the US says it imported from India, minus what India says it exported to the US (US$)</p>
+          <div class="chart" id="cGap" role="img" aria-label="Bar chart of the monthly gap between US-reported and India-reported trade"></div>
+        </div>
+        <div class="card">
+          <h4>What cleaning caught</h4>
+          <p class="sub">Not affected by the filters</p>
+          <div class="checks" id="checks"></div>
+        </div>
+      </div>
+    </section>
+
+    <details>
+      <summary>See the numbers as a table</summary>
+      <div class="tablebox">
+        <table id="table">
+          <thead><tr><th>Country</th><th>Import value</th><th>Share of value</th><th>Phones</th><th>Avg price</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+
+    <footer>
+      <span>Source: UN Comtrade. US-reported imports (CIF) and India-reported exports (FOB), HS 851713 smartphones. 2022 US phone counts are UN estimates. India's data starts in April 2022.</span>
+      <span>By Niranjan S &middot; <a href="https://github.com/niranjan6030/india-smartphone-trade-2026">Notebooks and cleaning steps on GitHub</a></span>
+    </footer>
+  </main>
+</div>
+
+<script>
+const DATA = __DATA__;
+
+const CSS = getComputedStyle(document.documentElement);
+const C = n => CSS.getPropertyValue(n).trim();
+const INK = C('--ink'), INK2 = C('--ink-2'), MUTED = C('--muted'), LINE = C('--line'), LINE2 = C('--line-2'), CARD = C('--card');
+const COL = { China: C('--china'), India: C('--india'), Vietnam: C('--vietnam'), Others: C('--others') };
+const FOCUS = C('--focus'), STEM = C('--stem'), REST = C('--rest'), NAVY = C('--navy'), GAP_UP = C('--gap-up'), GAP_DOWN = C('--gap-down');
+const HEAT = ['#FFF6E5', '#FBE0B0', '#F2BD6B', '#DE9A2E', '#C77700', '#8A4F00', '#5A3300'];
+
+const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const yearOf = m => +DATA.months[m].slice(0, 4);
+const monthNo = m => +DATA.months[m].slice(5, 7);
+const label = m => MN[monthNo(m) - 1] + ' ' + String(yearOf(m)).slice(2);
+const longLabel = m => MN[monthNo(m) - 1] + ' ' + yearOf(m);
+const YEARS = [...new Set(DATA.months.map((_, m) => yearOf(m)))];
+const IX = name => DATA.countries.indexOf(name);
+const INDIA = IX('India'), CHINA = IX('China'), VIETNAM = IX('Vietnam'), USA = IX('United States');
+const groupOf = c => c === CHINA ? 'China' : c === INDIA ? 'India' : c === VIETNAM ? 'Vietnam' : 'Others';
+
+const state = { years: new Set(YEARS), window: 'all', measure: 'value', supplier: null, dest: null };
+
+/* ------------------------------------------------------------ helpers */
+const inWindow = m => state.window === 'all' || monthNo(m) <= 7;
+const selected = m => state.years.has(yearOf(m)) && inWindow(m);
+const mv = r => state.measure === 'value' ? r[2] : r[3];
+
+const money = v => v >= 1e9 ? '$' + (v / 1e9).toFixed(1) + 'B' : v >= 1e6 ? '$' + Math.round(v / 1e6) + 'M' : '$' + Math.round(v / 1e3) + 'K';
+const phones = v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : Math.round(v / 1e3) + 'K';
+const fmt = v => state.measure === 'value' ? money(v) : phones(v);
+const pct = v => v.toFixed(1) + '%';
+
+function sum(rows, test, f = mv) { let s = 0; for (const r of rows) if (!test || test(r)) s += f(r); return s; }
+function byCountry(rows) {
+  const out = new Map();
+  for (const r of rows) out.set(r[1], (out.get(r[1]) || 0) + mv(r));
+  return [...out.entries()].sort((a, b) => b[1] - a[1]);
+}
+function avgPrice(rows, c) {
+  let v = 0, q = 0;
+  for (const r of rows) if (r[1] === c && r[4] === 1) { v += r[2]; q += r[3]; }
+  return q ? v / q : null;
+}
+
+const tip = {
+  backgroundColor: CARD, borderColor: LINE, borderWidth: 1, padding: [8, 12],
+  textStyle: { color: INK, fontSize: 12.5, fontFamily: "'DM Sans', sans-serif" },
+  extraCssText: 'border-radius:6px; box-shadow:0 6px 20px rgba(20,33,61,.12)'
+};
+const base = { backgroundColor: 'transparent', animationDuration: 380,
+  textStyle: { fontFamily: "'DM Sans', sans-serif", color: INK2, fontSize: 12 }, tooltip: tip };
+const axis = { axisLine: { lineStyle: { color: LINE } }, axisTick: { show: false },
+  axisLabel: { color: MUTED, fontSize: 11.5 }, splitLine: { lineStyle: { color: LINE2 } } };
+const legend = { top: 0, left: 0, icon: 'circle', itemWidth: 9, itemHeight: 9, itemGap: 16, textStyle: { color: INK2, fontSize: 12 } };
+const dot = c => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:6px"></span>`;
+
+const charts = {};
+function chart(id) {
+  if (!charts[id]) {
+    const el = document.getElementById(id);
+    charts[id] = echarts.init(el, null, { renderer: 'svg' });
+    new ResizeObserver(() => charts[id].resize()).observe(el);
+  }
+  return charts[id];
+}
+function clickable(c, handler) {
+  c.off('click'); c.on('click', handler);
+  c.getZr().off('mousemove'); c.getZr().on('mousemove', e => c.getZr().setCursorStyle(e.target ? 'pointer' : 'default'));
+}
+
+/* ------------------------------------------------------------ render */
+function render() {
+  const months = DATA.months.map((_, m) => m).filter(selected);
+  const usRows = DATA.us.filter(r => selected(r[0]));
+  const inRows = DATA.india.filter(r => selected(r[0]));
+  const usTotal = sum(usRows), inTotal = sum(inRows);
+  const years = [...state.years].sort();
+
+  // monthly totals per group
+  const mTotal = new Map(), mGroup = { China: new Map(), India: new Map(), Vietnam: new Map(), Others: new Map() };
+  for (const r of usRows) {
+    mTotal.set(r[0], (mTotal.get(r[0]) || 0) + mv(r));
+    const g = mGroup[groupOf(r[1])]; g.set(r[0], (g.get(r[0]) || 0) + mv(r));
+  }
+  const share = (g, m) => mTotal.get(m) ? (mGroup[g].get(m) || 0) / mTotal.get(m) * 100 : null;
+  const shareOf = c => usTotal ? sum(usRows, r => r[1] === c) / usTotal * 100 : 0;
+  const ahead = months.filter(m => (share('India', m) || 0) > (share('China', m) || 0));
+  const pI = avgPrice(usRows, INDIA), pC = avgPrice(usRows, CHINA), pV = avgPrice(usRows, VIETNAM);
+  const estimated = state.measure === 'qty' && state.years.has(2022);
+
+  /* ---------- masthead */
+  document.getElementById('period').textContent = `${longLabel(months[0])} – ${longLabel(months[months.length - 1])}`;
+  const unitTxt = state.measure === 'value' ? '' : ' <small>phones</small>';
+  let firstAhead = '—', firstAheadNote = 'China ahead in every month';
+  if (ahead.length) {
+    firstAhead = ahead[0] === months[0] ? 'Already' : longLabel(ahead[0]);
+    firstAheadNote = ahead[0] === months[0] ? `India ahead in ${ahead.length} of ${months.length} months` : 'first month India beat China';
+  }
+  document.getElementById('stats').innerHTML = [
+    [fmt(usTotal) + unitTxt, 'US smartphone imports'],
+    [pct(shareOf(INDIA)), "India's share"],
+    [pct(shareOf(CHINA)), "China's share"],
+    [firstAhead, firstAheadNote],
+    [pI ? '$' + Math.round(pI) + ` <small>vs $${Math.round(pC)}</small>` : '—', 'avg price, India vs China']
+  ].map(s => `<div class="stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+
+  /* ---------- 01a stacked area of monthly shares */
+  const order = ['India', 'Vietnam', 'Others', 'China'];   // India at the bottom so its growth is easy to see
+  const focusGroup = state.supplier == null ? null : groupOf(state.supplier);
+  const areaSeries = order.map(g => ({
+    name: g === 'Others' ? 'Other countries' : g, type: 'line', stack: 'share', showSymbol: false, symbolSize: 8,
+    data: months.map(m => { const s = share(g, m); return s == null ? null : +s.toFixed(1); }),
+    lineStyle: { width: 1, color: CARD },
+    areaStyle: { color: COL[g], opacity: focusGroup && focusGroup !== g ? 0.3 : 0.92 },
+    itemStyle: { color: COL[g] }, emphasis: { disabled: true }
+  }));
+  const tariff = months.findIndex(m => DATA.months[m] === '2025-04');
+  areaSeries[3].markLine = {
+    silent: true, symbol: 'none',
+    data: [
+      { yAxis: 50, lineStyle: { color: '#fff', width: 1, type: 'solid', opacity: 0.8 }, label: { formatter: 'half the market', position: 'insideStartTop', color: '#fff', fontSize: 11 } },
+      ...(tariff >= 0 ? [{ xAxis: tariff, lineStyle: { color: INK, width: 1, type: 'solid' }, label: { formatter: 'US tariffs\nannounced', position: 'end', color: INK, fontSize: 11, lineHeight: 14 } }] : [])
+    ]
+  };
+  chart('cShare').setOption({
+    ...base, legend: { ...legend },
+    grid: { left: 4, right: 12, top: 62, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: months.map(label), boundaryGap: false, ...axis, splitLine: { show: false } },
+    yAxis: { type: 'value', min: 0, max: 100, interval: 25, ...axis, axisLine: { show: false }, axisLabel: { color: MUTED, formatter: '{value}%' } },
+    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: INK2 } },
+      formatter: ps => `<b>${longLabel(months[ps[0].dataIndex])}</b><br>` + ps.slice().reverse().filter(p => p.value != null)
+        .map(p => `${dot(p.color)}${p.seriesName}: <b>${p.value}%</b>`).join('<br>') },
+    series: areaSeries
+  }, true);
+  document.getElementById('shareSub').textContent = estimated
+    ? 'By number of phones. Careful: 2022 phone counts are UN estimates'
+    : `By ${state.measure === 'value' ? 'import value' : 'number of phones'}. India is the bottom band`;
+
+  /* ---------- 01b January to July lines */
+  const janJul = y => DATA.us.filter(r => yearOf(r[0]) === y && monthNo(r[0]) <= 7);
+  const lineGroups = [['China', CHINA], ['India', INDIA], ['Vietnam', VIETNAM]];
+  if (focusGroup === 'Others') lineGroups.push([DATA.countries[state.supplier], state.supplier]);
+  chart('cYearly').setOption({
+    ...base, legend: { ...legend },
+    grid: { left: 4, right: 92, top: 40, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: years.map(String), ...axis, splitLine: { show: false } },
+    yAxis: { type: 'value', ...axis, axisLine: { show: false }, axisLabel: { color: MUTED, formatter: v => fmt(v) } },
+    tooltip: { ...tip, trigger: 'axis',
+      formatter: ps => `<b>Jan–Jul ${ps[0].name}</b><br>` + ps.map(p => `${dot(p.color)}${p.seriesName}: <b>${fmt(p.value)}</b>`).join('<br>') },
+    series: lineGroups.map(([name, c]) => {
+      const color = COL[name] || FOCUS;
+      return {
+        name, type: 'line', symbol: 'circle', symbolSize: 9,
+        data: years.map(y => sum(janJul(y), r => r[1] === c)),
+        lineStyle: { width: 2, color, opacity: focusGroup && focusGroup !== 'Others' && focusGroup !== name ? 0.3 : 1 },
+        itemStyle: { color, borderColor: CARD, borderWidth: 2 },
+        endLabel: { show: true, color: INK, fontSize: 11.5, formatter: p => `${p.seriesName} ${fmt(p.value)}` },
+        labelLayout: { moveOverlap: 'shiftY' }
+      };
+    })
+  }, true);
+
+  /* ---------- 02a treemap of suppliers */
+  const sup = byCountry(usRows);
+  const top = sup.slice(0, 10), restVal = sup.slice(10).reduce((a, s) => a + s[1], 0);
+  const treeData = top.map(([c, v]) => {
+    const g = groupOf(c), dim = state.supplier != null && state.supplier !== c;
+    return { name: DATA.countries[c], value: v, cIndex: c,
+      itemStyle: { color: g === 'Others' ? COL.Others : COL[g], opacity: dim ? 0.35 : 1 },
+      label: { color: g === 'Others' ? INK : '#fff' } };
+  });
+  if (restVal > 0) treeData.push({ name: `${sup.length - 10} other countries`, value: restVal, cIndex: null,
+    itemStyle: { color: REST }, label: { color: INK } });
+  const tree = chart('cTree');
+  tree.setOption({
+    ...base,
+    tooltip: { ...tip, formatter: p => `<b>${p.name}</b><br>${fmt(p.value)} &middot; ${pct(p.value / usTotal * 100)} of US imports` },
+    series: [{
+      type: 'treemap', roam: false, nodeClick: false, breadcrumb: { show: false },
+      left: 0, right: 0, top: 0, bottom: 0, squareRatio: 1.2,
+      itemStyle: { borderColor: CARD, borderWidth: 0, gapWidth: 2 },
+      label: { show: true, fontSize: 12, fontFamily: "'DM Sans', sans-serif", overflow: 'truncate',
+               formatter: p => p.value / usTotal < 0.03 ? '' : `{n|${p.name}}\n${pct(p.value / usTotal * 100)}`,
+               rich: { n: { fontWeight: 600, fontSize: 13 } } },
+      upperLabel: { show: false },
+      data: treeData
+    }]
+  }, true);
+  clickable(tree, p => { const c = p.data && p.data.cIndex; if (c == null) return; state.supplier = state.supplier === c ? null : c; render(); });
+
+  /* ---------- 02b dot plot of price per phone */
+  const priceYears = years.filter(y => y >= 2023);
+  const priceOf = (y, c) => { const p = avgPrice(usRows.filter(r => yearOf(r[0]) === y), c); return p ? Math.round(p) : null; };
+  const trio = [['China', CHINA], ['India', INDIA], ['Vietnam', VIETNAM]];
+  const lows = priceYears.map(y => Math.min(...trio.map(t => priceOf(y, t[1]) ?? Infinity)));
+  const highs = priceYears.map(y => Math.max(...trio.map(t => priceOf(y, t[1]) ?? -Infinity)));
+  chart('cPrice').setOption({
+    ...base, legend: { ...legend, data: trio.map(t => t[0]) },
+    grid: { left: 4, right: 24, top: 40, bottom: 4, containLabel: true },
+    xAxis: { type: 'value', min: 0, ...axis, axisLabel: { color: MUTED, formatter: '${value}' } },
+    yAxis: { type: 'category', data: priceYears.map(String), inverse: true, ...axis, axisLine: { show: false }, splitLine: { show: false },
+             axisLabel: { color: INK2, fontSize: 12.5, fontWeight: 600 } },
+    tooltip: { ...tip, trigger: 'item', formatter: p => `<b>${p.seriesName}, ${priceYears[p.data[1]]}</b><br>$${p.data[0]} per phone` },
+    series: [
+      { type: 'bar', stack: 'range', silent: true, barWidth: 3, data: lows.map(v => isFinite(v) ? v : null), itemStyle: { color: 'transparent' }, tooltip: { show: false } },
+      { type: 'bar', stack: 'range', silent: true, barWidth: 3, data: highs.map((v, i) => isFinite(v) ? v - lows[i] : null), itemStyle: { color: STEM }, tooltip: { show: false } },
+      ...trio.map(([name, c]) => ({
+        name, type: 'scatter', symbolSize: 14, z: 3,
+        data: priceYears.map((y, i) => [priceOf(y, c), i]).filter(d => d[0] != null),
+        itemStyle: { color: COL[name], borderColor: CARD, borderWidth: 2 },
+        label: name === 'India' ? { show: true, position: 'top', distance: 8, color: INK, fontWeight: 600, fontSize: 11.5, formatter: p => '$' + p.data[0] } : { show: false }
+      }))
+    ]
+  }, true);
+
+  /* ---------- 02c heatmap: India's share by month and year */
+  const mNos = state.window === 'all' ? [...Array(12).keys()].map(i => i + 1) : [1, 2, 3, 4, 5, 6, 7];
+  const heat = [];
+  years.forEach((y, yi) => mNos.forEach((n, xi) => {
+    const m = DATA.months.indexOf(`${y}-${String(n).padStart(2, '0')}`);
+    const s = m >= 0 ? share('India', m) : null;
+    if (s != null) heat.push([xi, yi, +s.toFixed(1)]);
+  }));
+  chart('cHeat').setOption({
+    ...base,
+    grid: { left: 4, right: 4, top: 4, bottom: 44, containLabel: true },
+    xAxis: { type: 'category', data: mNos.map(n => MN[n - 1]), ...axis, axisLine: { show: false }, splitLine: { show: false },
+             axisLabel: { color: MUTED, formatter: v => v === 'Sep' ? '{s|Sep}' : v, rich: { s: { color: INK, fontWeight: 700 } } } },
+    yAxis: { type: 'category', data: years.map(String), inverse: true, ...axis, axisLine: { show: false }, splitLine: { show: false },
+             axisLabel: { color: INK2, fontWeight: 600 } },
+    visualMap: { type: 'continuous', min: 0, max: 70, calculable: false, orient: 'horizontal', left: 'center', bottom: 0,
+                 itemWidth: 12, itemHeight: 160, text: ['70%', '0%'], textGap: 8, textStyle: { color: MUTED, fontSize: 11 },
+                 inRange: { color: HEAT } },
+    tooltip: { ...tip, formatter: p => `<b>${mNos.map(n => MN[n - 1])[p.data[0]]} ${years[p.data[1]]}</b><br>India: ${p.data[2]}% of US imports` },
+    series: [{ type: 'heatmap', data: heat,
+      itemStyle: { borderColor: CARD, borderWidth: 2, borderRadius: 3 },
+      label: { show: true, fontSize: 11, fontWeight: 600,
+               formatter: p => mNos[p.data[0]] === 9 ? p.data[2].toFixed(0) + '%' : '',
+               color: INK, textBorderColor: 'rgba(255,255,255,.8)', textBorderWidth: 2 } }]
+  }, true);
+
+  /* ---------- 03a lollipop of India's destinations */
+  const dests = byCountry(inRows).slice(0, 10);
+  const dChart = chart('cDest');
+  const dim = c => state.dest != null && state.dest !== c;
+  dChart.setOption({
+    ...base,
+    grid: { left: 4, right: 110, top: 4, bottom: 4, containLabel: true },
+    xAxis: { type: 'value', ...axis, show: false },
+    yAxis: { type: 'category', data: dests.map(d => DATA.countries[d[0]]), inverse: true, ...axis, axisLine: { show: false }, splitLine: { show: false },
+             axisLabel: { color: INK2, fontSize: 12 } },
+    tooltip: { ...tip, trigger: 'item', formatter: p => `<b>${p.name}</b><br>${fmt(p.value)} &middot; ${pct(p.value / inTotal * 100)} of India's exports` },
+    series: [
+      { type: 'bar', barWidth: 2, data: dests.map(d => ({ value: d[1], cIndex: d[0], itemStyle: { color: STEM, opacity: dim(d[0]) ? 0.4 : 1 } })) },
+      { type: 'scatter', symbolSize: 13, z: 3,
+        data: dests.map((d, i) => ({ value: [d[1], i], cIndex: d[0], name: DATA.countries[d[0]],
+          itemStyle: { color: d[0] === state.dest && d[0] !== USA ? NAVY : COL.India, borderColor: CARD, borderWidth: 2, opacity: dim(d[0]) ? 0.35 : 1 } })),
+        label: { show: true, position: 'right', distance: 8, color: INK2, fontSize: 11.5,
+                 formatter: p => `${fmt(p.value[0])}  ${pct(p.value[0] / inTotal * 100)}` },
+        tooltip: { formatter: p => `<b>${p.name}</b><br>${fmt(p.value[0])} &middot; ${pct(p.value[0] / inTotal * 100)} of India's exports` } }
+    ]
+  }, true);
+  clickable(dChart, p => { const c = p.data && p.data.cIndex; if (c == null) return; state.dest = state.dest === c ? null : c; render(); });
+
+  /* ---------- 03b share going to the US, by year */
+  const shareYear = (y, test) => { const rs = inRows.filter(r => yearOf(r[0]) === y); const t = sum(rs); return t ? sum(rs, test) / t * 100 : null; };
+  const colSeries = [{ name: 'United States', test: r => r[1] === USA, color: COL.India }];
+  if (state.dest != null && state.dest !== USA) colSeries.push({ name: DATA.countries[state.dest], test: r => r[1] === state.dest, color: NAVY });
+  colSeries.push({ name: 'Rest of the world', test: r => r[1] !== USA && r[1] !== state.dest, color: REST });
+  const inYears = years.filter(y => inRows.some(r => yearOf(r[0]) === y));
+  chart('cUsShare').setOption({
+    ...base, legend: { ...legend },
+    grid: { left: 4, right: 8, top: 40, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: inYears.map(y => y === 2022 ? '2022*' : String(y)), ...axis, splitLine: { show: false } },
+    yAxis: { type: 'value', min: 0, max: 100, interval: 25, ...axis, axisLine: { show: false }, axisLabel: { color: MUTED, formatter: '{value}%' } },
+    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(20,33,61,.05)' } },
+      formatter: ps => `<b>${ps[0].name}</b><br>` + ps.map(p => `${dot(p.color)}${p.seriesName}: <b>${p.value}%</b>`).join('<br>') },
+    series: colSeries.map((s, i) => ({
+      name: s.name, type: 'bar', stack: 'all', barMaxWidth: 48,
+      data: inYears.map(y => { const v = shareYear(y, s.test); return v == null ? null : +v.toFixed(1); }),
+      itemStyle: { color: s.color, borderColor: CARD, borderWidth: 1, borderRadius: i === colSeries.length - 1 ? [3, 3, 0, 0] : 0 },
+      label: i === 0 ? { show: true, position: 'inside', color: '#fff', fontWeight: 700, fontSize: 12, formatter: p => p.value.toFixed(0) + '%' } : { show: false }
+    }))
+  }, true);
+  document.getElementById('usShareSub').textContent = state.dest != null && state.dest !== USA
+    ? `The US compared with ${DATA.countries[state.dest]}, as a share of India's smartphone exports (*2022 starts in April)`
+    : "Share of India's smartphone exports each year (*2022 starts in April)";
+
+  /* ---------- 04a gap bars (always US$) */
+  const gm = months.filter(m => DATA.india.some(r => r[0] === m));
+  const usSays = gm.map(m => sum(DATA.us, r => r[0] === m && r[1] === INDIA, r => r[2]));
+  const inSays = gm.map(m => sum(DATA.india, r => r[0] === m && r[1] === USA, r => r[2]));
+  const gaps = gm.map((_, i) => (usSays[i] - inSays[i]) / 1e6);
+  const from = gm.findIndex(m => DATA.months[m] === '2025-11'), to = gm.findIndex(m => DATA.months[m] === '2026-02');
+  const gapSeries = [
+    { name: 'US counted more', color: GAP_UP, keep: v => v >= 0 },
+    { name: 'India counted more', color: GAP_DOWN, keep: v => v < 0 }
+  ].map((s, i) => ({
+    name: s.name, type: 'bar', barGap: '-100%', barMaxWidth: 10,
+    data: gaps.map(v => s.keep(v) ? +v.toFixed(0) : null),
+    itemStyle: { color: s.color, borderRadius: i === 0 ? [2, 2, 0, 0] : [0, 0, 2, 2] }
+  }));
+  if (from >= 0 && to >= 0) {
+    const g = gaps.slice(from, to + 1).reduce((a, v) => a + v, 0) * 1e6;
+    gapSeries[0].markArea = { silent: true, itemStyle: { color: 'rgba(42,120,214,.07)' },
+      label: { show: true, position: 'top', color: INK, fontSize: 11, lineHeight: 14, formatter: `Nov 25 – Feb 26: ${money(g)} gap` },
+      data: [[{ xAxis: from }, { xAxis: to }]] };
+  }
+  chart('cGap').setOption({
+    ...base, legend: { ...legend },
+    grid: { left: 4, right: 8, top: 56, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: gm.map(label), ...axis, splitLine: { show: false } },
+    yAxis: { type: 'value', ...axis, axisLine: { show: false },
+             axisLabel: { color: MUTED, formatter: v => v === 0 ? '$0' : (v > 0 ? '+' : '−') + money(Math.abs(v) * 1e6) } },
+    tooltip: { ...tip, trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(20,33,61,.05)' } },
+      formatter: ps => { const i = ps[0].dataIndex;
+        return `<b>${longLabel(gm[i])}</b><br>US says: ${money(usSays[i])}<br>India says: ${money(inSays[i])}<br>Gap: <b>${gaps[i] >= 0 ? '+' : '−'}${money(Math.abs(gaps[i]) * 1e6)}</b>`; } },
+    series: gapSeries
+  }, true);
+
+  /* ---------- 04b data checks (static) */
+  const M = DATA.meta;
+  document.getElementById('checks').innerHTML = [
+    [M.rawFiles, 'raw monthly files downloaded from the UN Comtrade API'],
+    [`${M.rawRows.toLocaleString('en-IN')} <small>&rarr;</small> ${M.cleanRows.toLocaleString('en-IN')}`, 'rows, after moving the "World" total rows out'],
+    ['$' + M.price2022, 'price per phone for every country in 2022: the UN estimated those counts, so 2022 prices were dropped'],
+    [`${Math.round(M.tinyRowShare)}% <small>of rows</small>`, `are shipments under 1,000 phones, but only ${M.tinyValueShare}% of the value, so they're left out of prices`]
+  ].map(c => `<div class="check"><div class="v">${c[0]}</div><div class="l">${c[1]}</div></div>`).join('');
+
+  /* ---------- sidebar: highlights, warning, takeaways */
+  const hl = [];
+  if (state.supplier != null) hl.push([`Supplier: ${DATA.countries[state.supplier]}`, () => { state.supplier = null; }]);
+  if (state.dest != null) hl.push([`Destination: ${DATA.countries[state.dest]}`, () => { state.dest = null; }]);
+  const hlBox = document.getElementById('highlights');
+  hlBox.innerHTML = hl.length ? hl.map((h, i) => `<div class="tag"><span>${h[0]}</span><button type="button" data-i="${i}" aria-label="Clear ${h[0]}">Clear</button></div>`).join('')
+                              : '<span class="none">Nothing yet. Click a supplier tile or a destination.</span>';
+  hlBox.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { hl[+b.dataset.i][1](); render(); }));
+  document.getElementById('warn').innerHTML = estimated ? '<div class="warn">2022 phone counts are UN estimates, so compare 2022 by value.</div>' : '';
+
+  const first = months[0], last = months[months.length - 1];
+  const topSup = sup[0], dAll = byCountry(inRows), second = dAll.filter(d => d[0] !== USA)[0];
+  const usPart = inTotal ? sum(inRows, r => r[1] === USA) / inTotal * 100 : null;
+  const gapPct = inSays.reduce((a, v) => a + v, 0) ? (usSays.reduce((a, v) => a + v, 0) / inSays.reduce((a, v) => a + v, 0) - 1) * 100 : null;
+  const items = [
+    `India went from <b>${pct(share('India', first) || 0)}</b> of US smartphone imports in ${longLabel(first)} to <b>${pct(share('India', last) || 0)}</b> in ${longLabel(last)}.`,
+    !ahead.length ? `China was ahead of India in <b>every</b> selected month.`
+      : ahead[0] === first ? `India was ahead of China in <b>${ahead.length} of ${months.length}</b> selected months.`
+      : `India passed China for the first time in <b>${longLabel(ahead[0])}</b>.`,
+    `<b>${DATA.countries[topSup[0]]}</b> is the biggest supplier in this selection, with <b>${pct(topSup[1] / usTotal * 100)}</b>.`,
+    pI ? `A phone from India averaged <b>$${Math.round(pI)}</b>, against <b>$${Math.round(pC)}</b> from China and <b>$${Math.round(pV)}</b> from Vietnam.` : '',
+    usPart != null && second ? `<b>${pct(usPart)}</b> of India's smartphone exports went to the US. Next was ${DATA.countries[second[0]]} at ${pct(second[1] / inTotal * 100)}.` : '',
+    gapPct != null ? `For the same phones, the US reported <b>${pct(Math.abs(gapPct))} ${gapPct >= 0 ? 'more' : 'less'}</b> than India.` : ''
+  ].filter(Boolean);
+  document.getElementById('takeaways').innerHTML = items.map(t => `<li>${t}</li>`).join('');
+
+  /* ---------- table */
+  const valTotal = sum(usRows, null, r => r[2]);
+  const t = new Map();
+  for (const r of usRows) { const x = t.get(r[1]) || { v: 0, q: 0 }; x.v += r[2]; x.q += r[3]; t.set(r[1], x); }
+  document.querySelector('#table tbody').innerHTML = [...t.entries()].sort((a, b) => b[1].v - a[1].v).slice(0, 15).map(([c, x]) => {
+    const p = avgPrice(usRows, c);
+    return `<tr class="${c === state.supplier ? 'focus' : ''}"><td><span class="sw" style="background:${COL[groupOf(c)]}"></span>${DATA.countries[c]}</td>
+      <td>${money(x.v)}</td><td>${pct(x.v / valTotal * 100)}</td><td>${phones(x.q)}</td><td>${p ? '$' + Math.round(p) : '—'}</td></tr>`;
+  }).join('');
+}
+
+/* ------------------------------------------------------------ controls */
+document.getElementById('rawFiles').textContent = DATA.meta.rawFiles;
+
+function drawYears() {
+  document.getElementById('years').innerHTML = YEARS.map(y =>
+    `<button class="yr" type="button" aria-pressed="${state.years.has(y)}" data-y="${y}">${y}</button>`).join('');
+  document.querySelectorAll('#years .yr').forEach(b => b.addEventListener('click', () => {
+    const y = +b.dataset.y;
+    if (state.years.has(y)) { if (state.years.size > 1) state.years.delete(y); } else state.years.add(y);
+    drawYears(); render();
+  }));
+}
+function segment(id, key) {
+  const btns = document.querySelectorAll(`#${id} button`);
+  const sync = () => btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === state[key])));
+  btns.forEach(b => b.addEventListener('click', () => { state[key] = b.dataset.v; sync(); render(); }));
+  return sync;
+}
+const syncWindow = segment('segWindow', 'window'), syncMeasure = segment('segMeasure', 'measure');
+document.getElementById('reset').addEventListener('click', () => {
+  Object.assign(state, { years: new Set(YEARS), window: 'all', measure: 'value', supplier: null, dest: null });
+  drawYears(); syncWindow(); syncMeasure(); render();
+});
+drawYears();
+render();
+</script>
+</body>
+</html>
