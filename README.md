@@ -6,6 +6,8 @@ I wanted to check with real data: **is India actually replacing China as the pho
 For this project I collected monthly trade data from the **UN Comtrade** database, cleaned it with Python, and analysed
 US smartphone imports and India's smartphone exports from January 2022 to July 2026.
 
+**[Open the interactive dashboard](https://niranjan6030.github.io/india-smartphone-trade-2026/)**
+
 ![US smartphone imports by year](images/01_us_imports_by_year.png)
 
 ## Questions
@@ -36,6 +38,7 @@ smartphones were mixed with all other mobile phones.
 - Python: pandas, matplotlib, seaborn, requests
 - Jupyter Notebook
 - Excel (cleaned data workbook)
+- HTML, CSS, JavaScript and ECharts (interactive dashboard)
 
 ## Project structure
 
@@ -49,8 +52,21 @@ notebooks/
   01_data_collection.ipynb downloading the data from the API
   02_data_cleaning.ipynb   cleaning and checks
   03_analysis.ipynb        analysis and charts
+dashboard/
+  template.html            dashboard page (layout, charts, filters)
+  build_dashboard.py       puts the cleaned data into the page
+docs/index.html            the finished dashboard (served by GitHub Pages)
 images/                    charts used in this README
 ```
+
+## Interactive dashboard
+
+[Open it here.](https://niranjan6030.github.io/india-smartphone-trade-2026/) It has four sections: the shift from China
+to India, who ships what (suppliers, price per phone, the September dip), India's side of the trade, and checks on the data.
+
+- Filter by year, switch between all months and Jan to Jul only, and switch between import value and number of phones
+- Click a supplier tile to highlight that country in every chart, or click one of India's export destinations to compare it with the US
+- The headline numbers and the key takeaways are recalculated from whatever you select
 
 ## Data cleaning
 
@@ -133,7 +149,7 @@ the possible ones (country of origin vs destination, timing, later revisions).
 
 ## Future scope
 
-- Build an interactive Tableau Public dashboard from the cleaned CSV files
+- Rebuild the dashboard in Tableau Public or Power BI
 - Add China's and Vietnam's own export data to compare all three sides
 - Update every month as new data comes out
 - Look at other electronics (laptops, tablets) to see if the same shift is happening
@@ -146,7 +162,11 @@ jupyter notebook
 ```
 
 Run the notebooks in order: `01` downloads the data (a few minutes, skips files already saved), `02` cleans it,
-`03` makes the charts.
+`03` makes the charts. Then rebuild the dashboard from the cleaned data:
+
+```bash
+python dashboard/build_dashboard.py
+```
 
 ---
 
